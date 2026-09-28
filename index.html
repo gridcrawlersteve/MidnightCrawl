@@ -1,6 +1,6 @@
 <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1,user-scalable=no'><title>Midnight Crawl Prototype</title><style>
 body{margin:0;background:#0b0907;color:#ead9ad;font-family:Georgia,serif;display:flex;justify-content:center}.app{width:min(100vw,520px);min-height:100vh;background:#15100b;padding:14px;box-sizing:border-box}.panel{border:1px solid #725c34;background:#100d09;padding:12px;margin:8px 0}h1{font-size:22px;text-align:center;margin:4px}.muted{color:#a99772;font-size:13px}.roster{display:grid;grid-template-columns:1fr 1fr;gap:6px}.char{padding:8px;border:1px solid #4d422d;background:#19140d}.char.sel{outline:2px solid #b99752}.name{font-weight:bold}.btn{background:#2a2114;color:#f2dfad;border:1px solid #8c713d;padding:10px;margin:4px;font:inherit}.btn:active{background:#49391f}.view{height:245px;position:relative;overflow:hidden;background:#030303;border:1px solid #75603a}.wall{position:absolute;border:2px solid #b9a06a;box-sizing:border-box}.map{font-family:monospace;white-space:pre;line-height:11px;font-size:11px;background:#050505;color:#bda873;padding:7px;overflow:auto}.party{font-family:monospace;font-size:12px}.controls{text-align:center}.log{height:70px;overflow:auto;font-size:13px}.hidden{display:none}</style></head><body><div class='app'>
-<h1>⚔ MIDNIGHT CRAWL ⚔</h1><div class='muted' style='text-align:center'>Sword & sorcery dungeon prototype · v0.3</div>
+<h1>⚔ MIDNIGHT CRAWL ⚔</h1><div class='muted' style='text-align:center'>Sword & sorcery dungeon prototype · v0.4</div>
 <div id='tavern'><div class='panel'><b>THE CROOKED TORCH TAVERN</b><p class='muted'>Choose up to six patrons, then descend beneath the tavern.</p><div id='roster' class='roster'></div><button class='btn' style='width:100%' onclick='enterDungeon()'>DESCEND INTO THE DUNGEON</button></div></div>
 <div id='game' class='hidden'><div class='view' id='view'></div><div class='panel party' id='party'></div><div class='controls'><button class='btn' onclick='turn(-1)'>↶ TURN</button><button class='btn' onclick='move(1)'>▲ FORWARD</button><button class='btn' onclick='turn(1)'>TURN ↷</button><br><button class='btn' onclick='move(-1)'>▼ BACK</button><button class='btn' onclick='save()'>SAVE</button><button class='btn' onclick='resetGame()'>TAVERN</button></div><div class='panel'><b>AUTOMAP</b><div id='map' class='map'></div></div><div class='panel log' id='log'></div></div>
 <script>
@@ -16,7 +16,7 @@ function turn(n){dir=(dir+n+4)%4;render();autosave()} function reveal(){for(let 
 function render(){renderView();let out='';for(let yy=0;yy<grid.length;yy++){for(let xx=0;xx<grid[0].length;xx++){let k=xx+','+yy;if(xx==x&&yy==y)out+='^>v<'[dir];else if(!seen.has(k))out+=' ';else out+=grid[yy][xx]=='#'?'█':'·'}out+='\n'}document.getElementById('map').textContent=out;document.getElementById('party').innerHTML=chosen.map(i=>`${chars[i][0].padEnd(16)} HP 12/12`).join('<br>')}
 function renderView(){
  const v=document.getElementById('view');v.innerHTML='';
- const W=v.clientWidth||490,H=v.clientHeight||245,cx=W/2,cy=H/2;
+ const W=v.clientWidth||490,H=v.clientHeight||245;
  const frames=[{l:0,r:W,t:0,b:H},{l:48,r:W-48,t:28,b:H-28},{l:91,r:W-91,t:52,b:H-52},{l:127,r:W-127,t:72,b:H-72},{l:155,r:W-155,t:87,b:H-87}];
  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('width','100%');svg.setAttribute('height','100%');svg.style.position='absolute';svg.style.inset='0';
  const line=(x1,y1,x2,y2)=>{let e=document.createElementNS('http://www.w3.org/2000/svg','line');for(const [k,val] of Object.entries({x1,y1,x2,y2}))e.setAttribute(k,val);e.setAttribute('stroke','#b9a06a');e.setAttribute('stroke-width','2');svg.appendChild(e)};
@@ -26,8 +26,8 @@ function renderView(){
  for(let d=0;d<4;d++){
    const px=x+dx*d,py=y+dy*d,a=frames[d],b=frames[d+1];last=d;
    const leftWall=wallAt(px+ldx,py+ldy),rightWall=wallAt(px+rdx,py+rdy);
-   if(leftWall){line(a.l,a.t,b.l,b.t);line(a.l,a.b,b.l,b.b);line(b.l,b.t,b.l,b.b)}else{line(a.l,a.t,b.l,b.t);line(a.l,a.b,b.l,b.b);line(a.l,a.t,a.l,a.b)}
-   if(rightWall){line(a.r,a.t,b.r,b.t);line(a.r,a.b,b.r,b.b);line(b.r,b.t,b.r,b.b)}else{line(a.r,a.t,b.r,b.t);line(a.r,a.b,b.r,b.b);line(a.r,a.t,a.r,a.b)}
+   if(leftWall){line(a.l,a.t,b.l,b.t);line(a.l,a.b,b.l,b.b);line(b.l,b.t,b.l,b.b)}else{line(a.l,a.t,b.l,b.t);line(a.l,a.b,b.l,b.b);line(b.l,b.t,b.l,b.b)}
+   if(rightWall){line(a.r,a.t,b.r,b.t);line(a.r,a.b,b.r,b.b);line(b.r,b.t,b.r,b.b)}else{line(a.r,a.t,b.r,b.t);line(a.r,a.b,b.r,b.b);line(b.r,b.t,b.r,b.b)}
    const fx=px+dx,fy=py+dy;
    if(wallAt(fx,fy)){rect(b);blocked=true;break}
  }
