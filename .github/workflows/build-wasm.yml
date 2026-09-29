@@ -1,0 +1,27 @@
+name: Build WASM
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.4'
+      - name: Build Wizardry engine for browser
+        run: |
+          GOOS=js GOARCH=wasm go build -o wizardry.wasm ./cmd/web
+          cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
+      - name: Commit browser engine
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add wizardry.wasm wasm_exec.js
+          git diff --cached --quiet || git commit -m "Build Wizardry WebAssembly engine"
+          git push
