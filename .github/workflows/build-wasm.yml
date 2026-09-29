@@ -14,14 +14,30 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24.4'
+      - name: Apply v0.46 engine automap
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text()
+          s=s.replace('v0.45 RESTART MAP FIX','v0.46 ENGINE AUTOMAP')
+          describe="function describe(){let open=[];for(let i=0;i<4;i++)if(!cellWall(x,y,i))open.push(i);if(open.length===1)return'The passage ends at a blank wall of fitted stone.';if(open.length===2&&((open[0]+2)%4===open[1]))return'A narrow stone corridor runs through the darkness.';if(open.length===2)return'The passage bends sharply here.';if(open.length===3)return'A three-way junction opens through worn stonework.';return'Cold air moves through the ancient masonry.'}"
+          s,n=re.subn(r'function describe\(\)\{.*?\}(?=function move)',describe,s,flags=re.S)
+          assert n==1, f'describe replacements: {n}'
+          render="""function render(){document.getElementById('rewardBox').style.display='none';if(inCombat){renderCombat();return}document.getElementById('controls').style.display='block';document.getElementById('combat').style.display='none';document.getElementById('mapPanel').style.display='none';document.getElementById('locationTitle').textContent='YOUR SURROUNDINGS';renderView();document.getElementById('description').textContent=describe();renderMap()}function renderMap(){if(!engineReady||!engineWalls){let out='';for(let yy=0;yy<grid.length;yy++){for(let xx=0;xx<grid[0].length;xx++){let k=xx+','+yy;if(xx==x&&yy==y)out+='^>v<'[dir];else if(!seen.has(k))out+=' ';else out+=grid[yy][xx]=='#'?'█':'·'}out+='\\n'}document.getElementById('map').textContent=out;return}const h=engineWalls.length,w=Math.max(...engineWalls.map(r=>r.length));const rows=Array.from({length:h*2+1},()=>Array(w*2+1).fill(' '));for(let yy=0;yy<h;yy++)for(let xx=0;xx<w;xx++){const k=xx+','+yy;if(!seen.has(k)&&!(xx===x&&yy===y))continue;const sy=yy*2+1,sx=xx*2+1;rows[sy][sx]=(xx===x&&yy===y)?'^>v<'[dir]:'·';if(engineWall(xx,yy,0))rows[sy-1][sx]='─';if(engineWall(xx,yy,1))rows[sy][sx+1]='│';if(engineWall(xx,yy,2))rows[sy+1][sx]='─';if(engineWall(xx,yy,3))rows[sy][sx-1]='│'}document.getElementById('map').textContent=rows.map(r=>r.join('')).join('\\n')}"""
+          s,n=re.subn(r'function render\(\)\{.*?\}(?=function renderView)',render,s,flags=re.S)
+          assert n==1, f'render replacements: {n}'
+          p.write_text(s)
+          PY
       - name: Build Wizardry engine for browser
         run: |
           GOOS=js GOARCH=wasm go build -o wizardry.wasm ./cmd/web
           cp "$(go env GOROOT)/lib/wasm/wasm_exec.js" wasm_exec.js
-      - name: Commit browser engine
+      - name: Commit browser engine and v0.46
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add wizardry.wasm wasm_exec.js
-          git diff --cached --quiet || git commit -m "Build Wizardry WebAssembly engine"
+          git add index.html wizardry.wasm wasm_exec.js
+          git diff --cached --quiet || git commit -m "v0.46 engine automap"
           git push
