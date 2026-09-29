@@ -23,6 +23,16 @@ func stateJSON(this js.Value, args []js.Value) any {
 		"inCombat": game.Combat != nil,
 	}
 	if cell != nil { out["cellType"] = string(cell.Type) }
+	if level := game.CurrentLevel(); level != nil {
+		walls := make([][]map[string]string, len(level.Cells))
+		for y, row := range level.Cells {
+			walls[y] = make([]map[string]string, len(row))
+			for x, c := range row {
+				walls[y][x] = map[string]string{"n":string(c.N),"e":string(c.E),"s":string(c.S),"w":string(c.W)}
+			}
+		}
+		out["walls"] = walls
+	}
 	b, _ := json.Marshal(out)
 	return string(b)
 }
