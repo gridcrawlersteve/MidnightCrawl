@@ -20,9 +20,6 @@ var monsterPicJSON []byte
 //go:embed wiz1_title.json
 var titleJSON []byte
 
-//go:embed wiz1_title_wt.bin
-var titleWTData []byte
-
 //go:embed wiz1_messages.json
 var messagesJSON []byte
 
@@ -32,7 +29,6 @@ func Load() (*data.Scenario, error) {
 		return nil, err
 	}
 	s.ScenarioNum = 1
-	s.TitleWT = titleWTData
 	if len(messagesJSON) > 0 {
 		json.Unmarshal(messagesJSON, &s.Messages)
 	}
