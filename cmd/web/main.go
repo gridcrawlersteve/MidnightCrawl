@@ -15,20 +15,26 @@ var game *engine.GameState
 func stateJSON(this js.Value, args []js.Value) any {
 	if game == nil { return "{}" }
 	cell := game.CurrentCell()
+	// The upstream Wizardry renderer uses the original Pascal maze convention:
+	// North increases Y. The browser renderer uses screen/grid convention:
+	// North decreases Y. Mirror Y here so movement state and rendered wall
+	// sampling share one coordinate system.
 	out := map[string]any{
 		"phase": int(game.Phase), "level": game.MazeLevel,
-		"x": game.PlayerX, "y": game.PlayerY, "facing": int(game.Facing),
+		"x": game.PlayerX, "y": 19-game.PlayerY, "facing": int(game.Facing),
 		"wallAhead": string(game.WallAhead()),
 		"partySize": len(game.Town.Party.Members),
 		"inCombat": game.Combat != nil,
 	}
 	if cell != nil { out["cellType"] = string(cell.Type) }
 	if level := game.CurrentLevel(); level != nil {
-		walls := make([][]map[string]string, len(level.Cells))
-		for y, row := range level.Cells {
-			walls[y] = make([]map[string]string, len(row))
+		h := len(level.Cells)
+		walls := make([][]map[string]string, h)
+		for engineY, row := range level.Cells {
+			browserY := h - 1 - engineY
+			walls[browserY] = make([]map[string]string, len(row))
 			for x, c := range row {
-				walls[y][x] = map[string]string{"n":string(c.N),"e":string(c.E),"s":string(c.S),"w":string(c.W)}
+				walls[browserY][x] = map[string]string{"n":string(c.N),"e":string(c.E),"s":string(c.S),"w":string(c.W)}
 			}
 		}
 		out["walls"] = walls
