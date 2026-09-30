@@ -2,6 +2,13 @@ name: Build WASM
 on:
   push:
     branches: [main]
+    paths:
+      - 'cmd/**'
+      - 'engine/**'
+      - 'data/**'
+      - 'scenarios/**'
+      - 'go.mod'
+      - 'go.sum'
   workflow_dispatch:
 permissions:
   contents: write
