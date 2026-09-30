@@ -1,0 +1,3 @@
+Full Wizardry browser port
+Source: 08ea6a0382c741d67a1cc6be1aa39a51cb199e88
+Built and tested with Go 1.25.1
