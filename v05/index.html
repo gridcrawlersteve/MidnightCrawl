@@ -21,7 +21,7 @@ window.mcPaint=raw=>{
  for(let i=0;i<frame.cells.length;i++){const c=frame.cells[i],x=(i%80)*10,y=Math.floor(i/80)*22;if(c.bg&&/^#[0-9a-f]{6}$/i.test(c.bg)&&c.bg!=='#000000'){ctx.fillStyle=c.bg;ctx.fillRect(x,y,10,22)}ctx.fillStyle=/^#[0-9a-f]{6}$/i.test(c.fg)?c.fg:'#67eb78';ctx.fillText(c.ch,x,y,10)}
  // Derive actions from the actual upstream screen, including its original letter prompts.
  const text=frame.text;canvas.setAttribute('aria-label',text.trim());
- const choices=new Map();for(const match of text.matchAll(/([A-Z0-9])\)\s*([A-Z][A-Z '\-]*)/g)){const key=match[1],word=(key+match[2]).trim().split(/\s{2,}/)[0].slice(0,22);choices.set(key,word)}
+ const choices=new Map();for(const match of text.matchAll(/([A-Z0-9])\)/g)){const key=match[1],tail=text.slice(match.index+2),word=tail.match(/^\s*([A-Z][A-Z'\-]*(?: [A-Z][A-Z'\-]*)*)/)?.[1]||'',label=word?(tail.startsWith(' ')?word:key+word):key;choices.set(key,label.slice(0,22))}
  for(const match of text.matchAll(/\[([A-Z])\] ([^\n]+)/g))choices.set(match[1],match[2].trim().slice(0,22));
  // Digits remain accessible on every selection screen.
  for(const key of 'YN+-1234567890')if(!choices.has(key))choices.set(key,key);
