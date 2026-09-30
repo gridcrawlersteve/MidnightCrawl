@@ -12,26 +12,26 @@ import (
 type UtilStep int
 
 const (
-	UtilMenu     UtilStep = iota // main menu: B/C/I/L
-	UtilBackup                    // backup sub-menu: T)O or F)ROM
-	UtilBackupTo                  // "backup to" path input
-	UtilBackupFrom                // "restore from" path input
-	UtilRename                    // rename: select character
-	UtilRenameNew                 // rename: enter new name
-	UtilImport                    // import: enter .DSK path
-	UtilImportResult              // import: showing results
-	UtilTransfer                  // transfer: select source scenario
-	UtilTransferResult            // transfer: showing results
+	UtilMenu           UtilStep = iota // main menu: B/C/I/L
+	UtilBackup                         // backup sub-menu: T)O or F)ROM
+	UtilBackupTo                       // "backup to" path input
+	UtilBackupFrom                     // "restore from" path input
+	UtilRename                         // rename: select character
+	UtilRenameNew                      // rename: enter new name
+	UtilImport                         // import: enter .DSK path
+	UtilImportResult                   // import: showing results
+	UtilTransfer                       // transfer: select source scenario
+	UtilTransferResult                 // transfer: showing results
 )
 
 // UtilState holds all state for the utilities phase.
 type UtilState struct {
-	Step             UtilStep
-	InputBuf         string   // text input buffer
-	Message          string   // status/result message
-	Messages         []string // multi-line results (for import/transfer)
-	SelectedChar     int      // index of character being renamed
-	TransferSources  []string // available scenario keys for transfer
+	Step            UtilStep
+	InputBuf        string   // text input buffer
+	Message         string   // status/result message
+	Messages        []string // multi-line results (for import/transfer)
+	SelectedChar    int      // index of character being renamed
+	TransferSources []string // available scenario keys for transfer
 }
 
 // NewUtilState creates a fresh utilities state at the main menu.
@@ -87,27 +87,39 @@ func RestoreRoster(game *GameState, srcPath string) error {
 	return game.Load()
 }
 
+var BrowserRosterReader func(string) ([]byte, error)
+
 // TransferCharacters imports characters from another scenario's roster.
 // From Pascal TRANGOOD (WIZUTILC.TEXT line 250): raw character copy — everything
 // transfers as-is (level, stats, spells, items, gold). Only restrictions:
 // STATUS must be OK, and quest items (index > 93) block transfer.
 func TransferCharacters(game *GameState, sourceScenario string) ([]string, error) {
-	rosterPath, err := RosterPath(sourceScenario)
-	if err != nil {
-		return nil, fmt.Errorf("roster path: %w", err)
-	}
-	rosterData, err := os.ReadFile(rosterPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// Try legacy path
-			legacy := legacyRosterPath(sourceScenario)
-			rosterData, err = os.ReadFile(legacy)
-			if err != nil {
-				return nil, fmt.Errorf("no roster found for scenario %s", sourceScenario)
-			}
-		} else {
-			return nil, fmt.Errorf("read roster: %w", err)
+	var rosterData []byte
+	var err error
+	if BrowserRosterReader != nil {
+		rosterData, err = BrowserRosterReader(sourceScenario)
+		if err != nil {
+			return nil, err
 		}
+	} else {
+		rosterPath, err := RosterPath(sourceScenario)
+		if err != nil {
+			return nil, fmt.Errorf("roster path: %w", err)
+		}
+		rosterData, err = os.ReadFile(rosterPath)
+		if err != nil {
+			if os.IsNotExist(err) {
+				// Try legacy path
+				legacy := legacyRosterPath(sourceScenario)
+				rosterData, err = os.ReadFile(legacy)
+				if err != nil {
+					return nil, fmt.Errorf("no roster found for scenario %s", sourceScenario)
+				}
+			} else {
+				return nil, fmt.Errorf("read roster: %w", err)
+			}
+		}
+
 	}
 
 	// Save format: {"roster": [characters], "party": [...]}
@@ -195,6 +207,12 @@ func AvailableTransferScenarios(currentGame *GameState) []string {
 	var available []string
 	for _, key := range all {
 		if key == current {
+			continue
+		}
+		if BrowserRosterReader != nil {
+			if _, err := BrowserRosterReader(key); err == nil {
+				available = append(available, key)
+			}
 			continue
 		}
 		rosterPath, err := RosterPath(key)

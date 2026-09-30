@@ -49,8 +49,14 @@ func scenarioKey(gameName string) string {
 	}
 }
 
+// BrowserSave is supplied by the WebAssembly host.
+var BrowserSave func(*GameState) error
+
 // Save writes the current roster and party to disk.
 func (g *GameState) Save() error {
+	if BrowserSave != nil {
+		return BrowserSave(g)
+	}
 	key := scenarioKey(g.Scenario.Game)
 	path, err := RosterPath(key)
 	if err != nil {

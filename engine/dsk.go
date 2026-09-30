@@ -10,10 +10,10 @@ import (
 // Apple II .DSK format constants.
 // From reference/startup.py AppleDisk class and docs/disk-format.md.
 const (
-	dskSize        = 143360 // 35 tracks × 16 sectors × 256 bytes
+	dskSize         = 143360 // 35 tracks × 16 sectors × 256 bytes
 	sectorsPerTrack = 16
 	bytesPerSector  = 256
-	blockSize       = 512   // UCSD Pascal block = 2 sectors
+	blockSize       = 512 // UCSD Pascal block = 2 sectors
 	blocksPerTrack  = 8
 )
 
@@ -49,10 +49,10 @@ func readBlocks(dsk []byte, startBlock, count int) []byte {
 
 // dskDirEntry represents a file in the UCSD Pascal volume directory.
 type dskDirEntry struct {
-	Name      string
-	FirstBlk  int
-	LastBlk   int
-	Kind      int
+	Name       string
+	FirstBlk   int
+	LastBlk    int
+	Kind       int
 	BlockCount int
 }
 
@@ -77,10 +77,10 @@ func listDirectory(dsk []byte) []dskDirEntry {
 
 		if firstBlk > 0 && lastBlk > firstBlk && lastBlk <= 280 {
 			files = append(files, dskDirEntry{
-				Name:      name,
-				FirstBlk:  firstBlk,
-				LastBlk:   lastBlk,
-				Kind:      fkind,
+				Name:       name,
+				FirstBlk:   firstBlk,
+				LastBlk:    lastBlk,
+				Kind:       fkind,
 				BlockCount: lastBlk - firstBlk,
 			})
 		}
@@ -266,30 +266,30 @@ func parseTCHAR(data []byte, offset int) *Character {
 	}
 
 	c := &Character{
-		Name:         strings.TrimSpace(name),
-		Race:         ourRace,
-		Class:        Class(class),
-		Alignment:    ourAlign,
-		Status:       ourStatus,
-		Level:        level,
-		XP:           xp,
-		HP:           hpLeft,
-		MaxHP:        hpMax,
-		Gold:         gold,
-		Age:          age,
-		Strength:     attribs[0],
-		IQ:           attribs[1],
-		Piety:        attribs[2],
-		Vitality:     attribs[3],
-		Agility:      attribs[4],
-		Luck:         attribs[5],
-		AC:           ac,
+		Name:            strings.TrimSpace(name),
+		Race:            ourRace,
+		Class:           Class(class),
+		Alignment:       ourAlign,
+		Status:          ourStatus,
+		Level:           level,
+		XP:              xp,
+		HP:              hpLeft,
+		MaxHP:           hpMax,
+		Gold:            gold,
+		Age:             age,
+		Strength:        attribs[0],
+		IQ:              attribs[1],
+		Piety:           attribs[2],
+		Vitality:        attribs[3],
+		Agility:         attribs[4],
+		Luck:            attribs[5],
+		AC:              ac,
 		MageSpells:      mageSpells,
 		PriestSpells:    priestSpells,
 		MaxMageSpells:   mageSpells,
 		MaxPriestSpells: priestSpells,
-		Items:        items,
-		ItemCount:    itemCount,
+		Items:           items,
+		ItemCount:       itemCount,
 	}
 	return c
 }
@@ -302,9 +302,11 @@ func parseTCHAR(data []byte, offset int) *Character {
 //  2. Find SCENARIO.DATA in UCSD Pascal directory
 //  3. Parse TOC to get ZCHAR zone offset and record count
 //  4. Read each TCHAR record (208 bytes) and convert to Character
+var ReadDSK = os.ReadFile
+
 func ImportFromDSK(path string) (string, []*Character, error) {
 	path = expandPath(path)
-	dsk, err := os.ReadFile(path)
+	dsk, err := ReadDSK(path)
 	if err != nil {
 		return "", nil, fmt.Errorf("read disk: %w", err)
 	}
